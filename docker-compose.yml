@@ -1,0 +1,66 @@
+services:
+  api:
+    build: ./api
+    ports:
+      - "8000:8000"
+    environment:
+      - OLLAMA_HOST=http://ollama:11434
+      - OLLAMA_MODEL=qwen2.5:7b-instruct
+      - SMTP_HOST=mailhog
+      - SMTP_PORT=1025
+      - LOG_LEVEL=INFO
+    depends_on:
+      ollama:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    networks:
+      - ai-router-net
+
+  mailhog:
+    image: mailhog/mailhog
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+    networks:
+      - ai-router-net
+
+  ollama:
+    image: ollama/ollama
+    volumes:
+      - ollama_data:/root/.ollama
+    entrypoint: ["/bin/sh", "-c"]
+    # Aktywny polling zamiast 'sleep 5' - czekamy aż serwer faktycznie odpowiada,
+    # zanim spróbujemy ściągnąć model.
+    # Uwaga: obraz ollama/ollama NIE ma zainstalowanego curl, więc do pollingu
+    # używamy samego narzędzia `ollama` (CLI wbudowane w obraz) zamiast curl.
+    command: >
+      "ollama serve &
+      echo 'Czekam na start Ollamy...';
+      until ollama list > /dev/null 2>&1; do
+        sleep 1;
+      done;
+      echo 'Ollama działa. Pobieram model...';
+      ollama pull $$OLLAMA_MODEL &&
+      echo 'Model gotowy.' &&
+      wait"
+    environment:
+      - OLLAMA_MODEL=qwen2.5:7b-instruct
+    ports:
+      - "11434:11434"
+    healthcheck:
+      # API odpali się dopiero jak model faktycznie będzie widoczny na liście w Ollamie
+      test: ["CMD-SHELL", "ollama list | grep -q 'qwen2.5:7b-instruct' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 60
+      start_period: 30s
+    networks:
+      - ai-router-net
+
+networks:
+  ai-router-net:
+    driver: bridge
+
+volumes:
+  ollama_data:

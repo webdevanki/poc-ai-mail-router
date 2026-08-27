@@ -1,0 +1,368 @@
+<!doctype html>
+<html lang="pl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>AI Mail Router — Panel testowy</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --ink: #eef0ee;
+    --ink-soft: #9aa1ab;
+    --ink-faint: #676d78;
+    --paper: #0c0e12;
+    --surface: #15181e;
+    --surface-2: #1b1f26;
+    --border: #262b34;
+    --accent: #3ee08f;
+    --accent-strong: #56f0a3;
+    --accent-soft: rgba(62, 224, 143, 0.12);
+    --accent-glow: rgba(62, 224, 143, 0.35);
+    --warn: #ff6b6b;
+    --warn-soft: rgba(255, 107, 107, 0.12);
+    --mono: "JetBrains Mono", ui-monospace, Consolas, monospace;
+    --sans: "Manrope", -apple-system, "Segoe UI", sans-serif;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    background:
+      radial-gradient(1100px 480px at 15% -10%, rgba(62,224,143,0.08), transparent 60%),
+      var(--paper);
+    color: var(--ink);
+    font-family: var(--sans);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .shell { max-width: 760px; margin: 0 auto; padding: 3rem 1.5rem 4rem; }
+  header { margin-bottom: 2.25rem; }
+  header .eyebrow {
+    font-family: var(--mono);
+    font-size: 0.72rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    color: var(--accent);
+    margin: 0 0 0.6rem;
+    display: flex;
+    align-items: center;
+    gap: 0.45rem;
+  }
+  header .eyebrow::before {
+    content: "";
+    width: 7px; height: 7px;
+    border-radius: 50%;
+    background: var(--accent);
+    box-shadow: 0 0 8px var(--accent-glow);
+  }
+  header h1 { font-size: 1.65rem; font-weight: 800; margin: 0 0 0.4rem; letter-spacing: -0.01em; }
+  header p { margin: 0; color: var(--ink-soft); font-size: 0.96rem; max-width: 52ch; }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    padding: 1.6rem;
+    margin-bottom: 1.5rem;
+    box-shadow: 0 1px 2px rgba(0,0,0,0.2), 0 12px 32px rgba(0,0,0,0.28);
+  }
+
+  .examples { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 1.4rem; }
+  .example-btn {
+    font-family: var(--mono);
+    font-size: 0.74rem;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--ink-soft);
+    padding: 0.42rem 0.75rem;
+    border-radius: 999px;
+    cursor: pointer;
+    transition: border-color 0.15s ease, color 0.15s ease, background 0.15s ease;
+  }
+  .example-btn:hover { border-color: var(--accent); color: var(--accent-strong); background: var(--accent-soft); }
+
+  label { display: block; font-size: 0.8rem; color: var(--ink-soft); margin: 0 0 0.4rem; font-weight: 600; letter-spacing: 0.01em; }
+  input, textarea {
+    width: 100%;
+    font-family: var(--sans);
+    font-size: 0.96rem;
+    padding: 0.7rem 0.85rem;
+    border: 1px solid var(--border);
+    border-radius: 9px;
+    background: var(--surface-2);
+    color: var(--ink);
+    margin-bottom: 1.1rem;
+    transition: border-color 0.15s ease;
+  }
+  textarea { min-height: 90px; resize: vertical; font-family: var(--sans); }
+  input::placeholder, textarea::placeholder { color: var(--ink-faint); }
+  input:focus, textarea:focus {
+    outline: none;
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px var(--accent-soft);
+  }
+  button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+  button.submit {
+    font-family: var(--sans);
+    font-size: 0.95rem;
+    font-weight: 700;
+    background: var(--accent);
+    color: #06130c;
+    border: none;
+    border-radius: 9px;
+    padding: 0.8rem 1.4rem;
+    cursor: pointer;
+    box-shadow: 0 8px 22px rgba(62,224,143,0.22);
+    transition: filter 0.15s ease, transform 0.15s ease;
+  }
+  button.submit:hover:not(:disabled) { filter: brightness(1.08); transform: translateY(-1px); }
+  button.submit:disabled { opacity: 0.45; cursor: not-allowed; box-shadow: none; }
+
+  .steps { display: flex; flex-direction: column; gap: 1rem; }
+  .step {
+    display: flex;
+    gap: 0.85rem;
+    align-items: flex-start;
+    font-size: 0.93rem;
+  }
+  .step .mark {
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    border: 2px solid var(--border);
+    background: var(--surface-2);
+    flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.7rem;
+    font-family: var(--mono);
+    margin-top: 0.05rem;
+    color: var(--ink-faint);
+  }
+  .step.done .mark { border-color: var(--accent); background: var(--accent); color: #06130c; }
+  .step.active .mark { border-color: var(--accent); color: var(--accent); animation: pulse 1.6s ease-in-out infinite; }
+  .step.error .mark { border-color: var(--warn); background: var(--warn); color: #1a0505; }
+  .step .label { color: var(--ink-soft); }
+  .step.done .label, .step.active .label { color: var(--ink); font-weight: 500; }
+  .step .detail { font-family: var(--mono); font-size: 0.82rem; color: var(--ink-faint); margin-top: 0.3rem; }
+  .step.active .detail { color: var(--accent); }
+
+  @keyframes pulse {
+    0%, 100% { box-shadow: 0 0 0 0 var(--accent-glow); }
+    50% { box-shadow: 0 0 0 7px transparent; }
+  }
+
+  .result {
+    margin-top: 1.6rem;
+    padding: 1.2rem 1.3rem;
+    border-radius: 10px;
+    background: var(--accent-soft);
+    border: 1px solid rgba(62,224,143,0.35);
+  }
+  .result.error { background: var(--warn-soft); border-color: rgba(255,107,107,0.4); }
+  .result dl { display: grid; grid-template-columns: auto 1fr; gap: 0.4rem 1rem; margin: 0; font-size: 0.9rem; }
+  .result dt { font-family: var(--mono); font-size: 0.7rem; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft); align-self: baseline; }
+  .result dd { margin: 0; color: var(--ink); }
+
+  .mailhog-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.3rem;
+    margin-top: 1.1rem;
+    font-size: 0.88rem;
+    color: var(--accent-strong);
+    text-decoration: none;
+    font-weight: 700;
+  }
+  .mailhog-link:hover { text-decoration: underline; }
+
+  .hint {
+    font-size: 0.8rem;
+    color: var(--ink-faint);
+    margin-top: 0.5rem;
+  }
+
+  footer {
+    font-family: var(--mono);
+    font-size: 0.76rem;
+    color: var(--ink-faint);
+    text-align: center;
+    margin-top: 2.75rem;
+  }
+  footer a { color: var(--ink-soft); }
+</style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <h1>AI Mail Router — panel testowy</h1>
+      <p>Wyślij zgłoszenie i zobacz na żywo, jak agent AI je analizuje i przekazuje dalej.</p>
+    </header>
+
+    <div class="card">
+      <div class="examples" id="examples">
+        <button type="button" class="example-btn" data-msg="Moj komputer sluzbowy w ogole sie nie wlacza od rana, ekran jest czarny." data-email="anna.kowalska@example.com">awaria sprzętu → IT</button>
+        <button type="button" class="example-btn" data-msg="Chcialbym zlozyc wniosek o urlop wypoczynkowy od 2 do 10 wrzesnia." data-email="piotr.zielinski@example.com">wniosek o urlop → Kadry</button>
+        <button type="button" class="example-btn" data-msg="Interesuje mnie proces rekrutacji na stanowisko wykladowcy - jakie dokumenty musze zlozyc?" data-email="kandydat@example.com">rekrutacja → HR</button>
+        <button type="button" class="example-btn" data-msg="Zapomnialem hasla do platformy e-learningowej, jak moge je zresetowac?" data-email="student@example.com">reset hasła → Helpdesk</button>
+        <button type="button" class="example-btn" data-msg="Chcialbym pochwalic sprzatanie na korytarzu, jest bardzo czysto." data-email="ktos@example.com">coś nietypowego → Other</button>
+      </div>
+
+      <form id="route-form">
+        <label for="email">E-mail nadawcy</label>
+        <input id="email" name="email" type="email" required placeholder="jan.nowak@example.com" value="jan.nowak@example.com">
+
+        <label for="message">Treść zgłoszenia</label>
+        <textarea id="message" name="message" required placeholder="Opisz problem lub prośbę..."></textarea>
+
+        <button type="submit" class="submit" id="submit-btn">Wyślij zgłoszenie →</button>
+        <p class="hint">Model liczy odpowiedź na CPU (bez GPU) — pojedyncze zgłoszenie może zająć od kilkudziesięciu sekund do kilku minut. To normalne.</p>
+      </form>
+    </div>
+
+    <div class="card" id="status-card" hidden>
+      <div class="steps" id="steps">
+        <div class="step" id="step-sent">
+          <div class="mark">1</div>
+          <div>
+            <div class="label">Żądanie wysłane do API</div>
+            <div class="detail" id="sent-detail"></div>
+          </div>
+        </div>
+        <div class="step" id="step-thinking">
+          <div class="mark">2</div>
+          <div>
+            <div class="label">Agent AI analizuje zgłoszenie (Ollama liczy odpowiedź)</div>
+            <div class="detail" id="thinking-detail">0s</div>
+          </div>
+        </div>
+        <div class="step" id="step-result">
+          <div class="mark">3</div>
+          <div>
+            <div class="label">Decyzja i wysyłka maila</div>
+          </div>
+        </div>
+      </div>
+
+      <div id="result-box"></div>
+    </div>
+
+    <footer>
+      Swagger: <a href="/api/v1/docs">/api/v1/docs</a> &middot;
+      MailHog: <a href="http://localhost:8025" target="_blank" rel="noopener">localhost:8025</a>
+    </footer>
+  </div>
+
+<script>
+  const form = document.getElementById('route-form');
+  const submitBtn = document.getElementById('submit-btn');
+  const statusCard = document.getElementById('status-card');
+  const stepSent = document.getElementById('step-sent');
+  const stepThinking = document.getElementById('step-thinking');
+  const stepResult = document.getElementById('step-result');
+  const sentDetail = document.getElementById('sent-detail');
+  const thinkingDetail = document.getElementById('thinking-detail');
+  const resultBox = document.getElementById('result-box');
+
+  function escapeHtml(value) {
+    return String(value)
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#39;');
+  }
+
+  document.getElementById('examples').addEventListener('click', (e) => {
+    const btn = e.target.closest('.example-btn');
+    if (!btn) return;
+    document.getElementById('message').value = btn.dataset.msg;
+    document.getElementById('email').value = btn.dataset.email;
+  });
+
+  function resetSteps() {
+    [stepSent, stepThinking, stepResult].forEach(s => {
+      s.classList.remove('done', 'active', 'error');
+      s.querySelector('.mark').textContent = s.dataset.num || '';
+    });
+    stepSent.querySelector('.mark').textContent = '1';
+    stepThinking.querySelector('.mark').textContent = '2';
+    stepResult.querySelector('.mark').textContent = '3';
+    resultBox.innerHTML = '';
+  }
+
+  let timerHandle = null;
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value.trim();
+    const message = document.getElementById('message').value.trim();
+    if (!email || !message) return;
+
+    statusCard.hidden = false;
+    submitBtn.disabled = true;
+    resetSteps();
+
+    stepSent.classList.add('done');
+    stepSent.querySelector('.mark').textContent = '✓';
+    sentDetail.textContent = new Date().toLocaleTimeString('pl-PL');
+
+    stepThinking.classList.add('active');
+    const startedAt = Date.now();
+    timerHandle = setInterval(() => {
+      const s = Math.round((Date.now() - startedAt) / 1000);
+      thinkingDetail.textContent = s + 's';
+    }, 1000);
+
+    try {
+      const response = await fetch('/api/v1/route', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ email, message }),
+      });
+
+      clearInterval(timerHandle);
+      stepThinking.classList.remove('active');
+      stepThinking.classList.add('done');
+      stepThinking.querySelector('.mark').textContent = '✓';
+
+      if (!response.ok) {
+        const errBody = await response.json().catch(() => ({}));
+        stepResult.classList.add('error');
+        stepResult.querySelector('.mark').textContent = '!';
+        resultBox.innerHTML = `<div class="result error">
+          <strong>Blad ${escapeHtml(response.status)}</strong>
+          <p style="margin:0.5rem 0 0;">${escapeHtml(errBody.detail || 'Nieznany blad.')}</p>
+        </div>`;
+        return;
+      }
+
+      const data = await response.json();
+      stepResult.classList.add('done');
+      stepResult.querySelector('.mark').textContent = '✓';
+
+      resultBox.innerHTML = `<div class="result">
+        <dl>
+          <dt>Dział</dt><dd>${escapeHtml(data.target_email)}</dd>
+          <dt>Kategoria</dt><dd>${escapeHtml(data.category)}</dd>
+          <dt>Uzasadnienie</dt><dd>${escapeHtml(data.reasoning)}</dd>
+        </dl>
+        <a class="mailhog-link" href="http://localhost:8025" target="_blank" rel="noopener">Zobacz maila w MailHog &rarr;</a>
+      </div>`;
+    } catch (err) {
+      clearInterval(timerHandle);
+      stepThinking.classList.remove('active');
+      stepResult.classList.add('error');
+      stepResult.querySelector('.mark').textContent = '!';
+      resultBox.innerHTML = `<div class="result error">
+        <strong>Blad polaczenia</strong>
+        <p style="margin:0.5rem 0 0;">Nie udalo sie polaczyc z API (${escapeHtml(err.message)}). Sprawdz czy stack dziala: docker compose ps.</p>
+      </div>`;
+    } finally {
+      submitBtn.disabled = false;
+    }
+  });
+</script>
+</body>
+</html>
