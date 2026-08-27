@@ -16,8 +16,8 @@ firmy zgłoszenie pasuje i wywołuje narzędzie (function calling).
 ## Szybki start
 
 ```bash
-git clone <adres-repo>
-cd ai-mail-router
+git clone https://github.com/webdevanki/poc-ai-mail-router.git
+cd poc-ai-mail-router
 docker compose up -d
 ```
 
