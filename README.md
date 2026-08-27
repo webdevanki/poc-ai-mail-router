@@ -42,16 +42,25 @@ Gdy `api` ma status `Up`, wszystko jest gotowe.
 | MailHog (podgląd wysłanych maili) | http://localhost:8025 |
 | Panel testowy (do szybkiego ręcznego testowania) | http://localhost:8000/panel |
 
+Panel testowy to prosty formularz HTML - alternatywa dla cURL/Swaggera,
+pozwalająca wysłać zgłoszenie (e-mail + wiadomość) i zobaczyć wynik routingu
+bezpośrednio w przeglądarce.
+
 ## Przykładowy request
 
 ```bash
-curl -X POST http://localhost:8000/api/v1/route \
-  -H "Content-Type: application/json" \
-  -d '{
-    "email": "jan.nowak@example.com",
-    "message": "Drukarka w biurze jest zepsuta, nie dziala i wyswietla blad przy kazdej probie druku."
-  }'
+curl -X POST http://localhost:8000/api/v1/route -H "Content-Type: application/json" -d "{\"email\": \"jan.nowak@example.com\", \"message\": \"Drukarka w biurze jest zepsuta, nie dziala i wyswietla blad przy kazdej probie druku.\"}"
 ```
+
+(Działa w bash/Git Bash i w `cmd.exe`.)
+
+W Windows PowerShell użyj tego:
+
+```powershell
+Invoke-RestMethod -Method Post -Uri http://localhost:8000/api/v1/route -ContentType "application/json" -Body '{"email": "jan.nowak@example.com", "message": "Drukarka w biurze jest zepsuta, nie dziala i wyswietla blad przy kazdej probie druku."}'
+```
+
+Uwaga: powyższy przykład celowo nie zawiera polskich znaków diakrytycznych (ą, ę, ł, ś...) - API w pełni je obsługuje (Ollama i FastAPI działają na UTF-8), ale wpisane bezpośrednio w `-d` w niektórych terminalach Windows (np. Git Bash ze złą stroną kodową) mogą się uszkodzić, zanim curl wyśle request. Bezpieczniej wtedy wysłać payload z pliku UTF-8 (`--data-binary @request.json`) niż wpisywać go bezpośrednio w linii poleceń.
 
 Przykładowa odpowiedź:
 
@@ -122,7 +131,7 @@ trwać od kilkudziesięciu sekund do kilku minut na test.
   częściowo pokrywać znaczeniowo dla niejednoznacznych zgłoszeń (np. "nie
   mogę się zalogować" - to problem sprzętowy czy proceduralny?) -
   rozstrzygane jawnymi regułami w system prompcie agenta
-  (`api/app/agent.py`), ale przypadki brzegowe pozostają z trudne
+  (`api/app/agent.py`), ale przypadki brzegowe pozostają z natury trudne
   dla klasyfikacji opartej o LLM i wymagają doprecyzowania.
 
 ## Zmienne środowiskowe
